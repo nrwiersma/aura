@@ -9,9 +9,10 @@ import (
 	httpx "github.com/hamba/pkg/v2/http"
 	mw "github.com/hamba/pkg/v2/http/middleware"
 	"github.com/hamba/statter/v2/runtime"
-	"github.com/nrwiersma/aura"
-	"github.com/nrwiersma/aura/api"
-	"github.com/nrwiersma/aura/docker"
+	"github.com/nrwiersma/aura/pkg/api"
+	"github.com/nrwiersma/aura/pkg/controller"
+	"github.com/nrwiersma/aura/pkg/docker"
+	"github.com/nrwiersma/aura/pkg/store"
 	"github.com/urfave/cli/v2"
 )
 
@@ -31,7 +32,7 @@ func runServer(c *cli.Context) error {
 	defer func() { _ = stats.Close() }()
 	go runtime.Collect(stats)
 
-	db, err := aura.OpenDB(c.String(flagDBDSN), log)
+	db, err := store.OpenDB(c.String(flagDBDSN), log)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func runServer(c *cli.Context) error {
 		return err
 	}
 
-	app := aura.New(db, reg)
+	app := controller.New(reg, db)
 
 	apiSrv := api.New(app, log, stats)
 

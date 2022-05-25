@@ -8,18 +8,18 @@ import (
 	"github.com/hamba/logger/v2"
 	mw "github.com/hamba/pkg/v2/http/middleware"
 	"github.com/hamba/statter/v2"
-	"github.com/nrwiersma/aura"
+	"github.com/nrwiersma/aura/pkg/controller"
 )
 
 // Delegate represents an aura delegate.
 type Delegate interface {
-	App(ctx context.Context, q aura.AppsQuery) (*aura.App, error)
-	Apps(ctx context.Context, q aura.AppsQuery) ([]*aura.App, error)
-	Create(ctx context.Context, cfg aura.CreateConfig) (*aura.App, error)
-	Destroy(ctx context.Context, cfg aura.DestroyConfig) error
-	Release(ctx context.Context, q aura.ReleasesQuery) (*aura.Release, error)
-	Releases(ctx context.Context, q aura.ReleasesQuery) ([]*aura.Release, error)
-	Deploy(ctx context.Context, cfg aura.DeployConfig) (*aura.Release, error)
+	App(ctx context.Context, q controller.AppsQuery) (*controller.App, error)
+	Apps(ctx context.Context, q controller.AppsQuery) ([]*controller.App, error)
+	Create(ctx context.Context, cfg controller.CreateConfig) (*controller.App, error)
+	Destroy(ctx context.Context, cfg controller.DestroyConfig) error
+	Release(ctx context.Context, q controller.ReleasesQuery) (*controller.Release, error)
+	Releases(ctx context.Context, q controller.ReleasesQuery) ([]*controller.Release, error)
+	Deploy(ctx context.Context, cfg controller.DeployConfig) (*controller.Release, error)
 }
 
 // Server serves api requests.

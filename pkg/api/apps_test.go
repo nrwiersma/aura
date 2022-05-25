@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nrwiersma/aura"
+	"github.com/nrwiersma/aura/pkg/controller"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,14 +17,14 @@ func TestServer_HandleGetApps(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		apps           []*aura.App
+		apps           []*controller.App
 		err            error
 		wantStatusCode int
 		wantResp       string
 	}{
 		{
 			name:           "handles request",
-			apps:           []*aura.App{{ID: "test", Name: "test app", CreatedAt: &now}},
+			apps:           []*controller.App{{ID: "test", Name: "test app", CreatedAt: &now}},
 			wantStatusCode: http.StatusOK,
 			wantResp:       `[{"id":"test","name":"test app","createdAt":"2022-02-01T04:00:00Z"}]`,
 		},
@@ -40,7 +40,7 @@ func TestServer_HandleGetApps(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			app := &mockApp{}
-			app.On("Apps", aura.AppsQuery{}).Return(test.apps, test.err)
+			app.On("Apps", controller.AppsQuery{}).Return(test.apps, test.err)
 
 			srvUrl := setupTestServer(t, app)
 
@@ -62,20 +62,20 @@ func TestServer_HandleGetApp(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		app            *aura.App
+		app            *controller.App
 		err            error
 		wantStatusCode int
 		wantResp       string
 	}{
 		{
 			name:           "handles request",
-			app:            &aura.App{ID: "test", Name: "test app", CreatedAt: &now},
+			app:            &controller.App{ID: "test", Name: "test app", CreatedAt: &now},
 			wantStatusCode: http.StatusOK,
 			wantResp:       `{"id":"test","name":"test app","createdAt":"2022-02-01T04:00:00Z"}`,
 		},
 		{
 			name:           "handles app not found",
-			err:            aura.ErrNotFound,
+			err:            controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"app not found"}`,
 		},
@@ -91,7 +91,7 @@ func TestServer_HandleGetApp(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			app := &mockApp{}
-			app.On("App", aura.AppsQuery{ID: "123"}).Return(test.app, test.err)
+			app.On("App", controller.AppsQuery{ID: "123"}).Return(test.app, test.err)
 
 			srvUrl := setupTestServer(t, app)
 
@@ -118,7 +118,7 @@ func TestServer_HandleCreateApp(t *testing.T) {
 	tests := []struct {
 		name           string
 		req            string
-		app            *aura.App
+		app            *controller.App
 		err            error
 		wantAppName    string
 		wantStatusCode int
@@ -127,7 +127,7 @@ func TestServer_HandleCreateApp(t *testing.T) {
 		{
 			name:           "handles request",
 			req:            `{"name":"test app"}`,
-			app:            &aura.App{ID: "123", Name: "test app", CreatedAt: &now},
+			app:            &controller.App{ID: "123", Name: "test app", CreatedAt: &now},
 			wantAppName:    "test app",
 			wantStatusCode: http.StatusOK,
 			wantResp:       `{"id":"123","name":"test app","createdAt":"2022-02-01T04:00:00Z"}`,
@@ -141,7 +141,7 @@ func TestServer_HandleCreateApp(t *testing.T) {
 		{
 			name:           "handles validation error",
 			req:            `{"name":"test app"}`,
-			err:            aura.ValidationError{},
+			err:            controller.ValidationError{},
 			wantAppName:    "test app",
 			wantStatusCode: http.StatusBadRequest,
 			wantResp:       `{"error":"invalid app: validation error"}`,
@@ -161,7 +161,7 @@ func TestServer_HandleCreateApp(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := &mockApp{}
 			if test.wantAppName != "" {
-				app.On("Create", aura.CreateConfig{Name: test.wantAppName}).Return(test.app, test.err)
+				app.On("Create", controller.CreateConfig{Name: test.wantAppName}).Return(test.app, test.err)
 			}
 
 			srvUrl := setupTestServer(t, app)
@@ -184,7 +184,7 @@ func TestServer_HandleDestroyApp(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		app            *aura.App
+		app            *controller.App
 		findErr        error
 		destroyErr     error
 		wantStatusCode int
@@ -192,18 +192,18 @@ func TestServer_HandleDestroyApp(t *testing.T) {
 	}{
 		{
 			name:           "handles request",
-			app:            &aura.App{ID: "test", Name: "test app", CreatedAt: &now},
+			app:            &controller.App{ID: "test", Name: "test app", CreatedAt: &now},
 			wantStatusCode: http.StatusNoContent,
 		},
 		{
 			name:           "handles app not found",
-			findErr:        aura.ErrNotFound,
+			findErr:        controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"app not found"}`,
 		},
 		{
 			name:           "handles app error",
-			app:            &aura.App{ID: "test", Name: "test app", CreatedAt: &now},
+			app:            &controller.App{ID: "test", Name: "test app", CreatedAt: &now},
 			destroyErr:     errors.New("test"),
 			wantStatusCode: http.StatusInternalServerError,
 			wantResp:       `{"error":"internal server error"}`,
@@ -214,9 +214,9 @@ func TestServer_HandleDestroyApp(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			app := &mockApp{}
-			app.On("App", aura.AppsQuery{ID: "123"}).Return(test.app, test.findErr)
+			app.On("App", controller.AppsQuery{ID: "123"}).Return(test.app, test.findErr)
 			if test.app != nil {
-				app.On("Destroy", aura.DestroyConfig{App: test.app}).Return(test.destroyErr)
+				app.On("Destroy", controller.DestroyConfig{App: test.app}).Return(test.destroyErr)
 			}
 
 			srvUrl := setupTestServer(t, app)

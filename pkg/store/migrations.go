@@ -1,4 +1,4 @@
-package aura
+package store
 
 import (
 	"github.com/nrwiersma/aura/pkg/migrate"

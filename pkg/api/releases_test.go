@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nrwiersma/aura"
+	"github.com/nrwiersma/aura/pkg/controller"
 	"github.com/nrwiersma/aura/pkg/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,20 +19,20 @@ func TestServer_HandleGetReleases(t *testing.T) {
 	tests := []struct {
 		name           string
 		appErr         error
-		releases       []*aura.Release
+		releases       []*controller.Release
 		releasesErr    error
 		wantStatusCode int
 		wantResp       string
 	}{
 		{
 			name:           "handles request",
-			releases:       []*aura.Release{{ID: "test", AppID: "123", Version: 2}},
+			releases:       []*controller.Release{{ID: "test", App: &controller.App{ID: "123"}, Version: 2}},
 			wantStatusCode: http.StatusOK,
-			wantResp:       `[{"id":"test","app":{"id":"","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}]`,
+			wantResp:       `[{"id":"test","app":{"id":"123","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}]`,
 		},
 		{
 			name:           "handles app not found",
-			appErr:         aura.ErrNotFound,
+			appErr:         controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"app not found"}`,
 		},
@@ -53,12 +53,12 @@ func TestServer_HandleGetReleases(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			a := &aura.App{ID: "123", Name: "test app", CreatedAt: &now}
+			a := &controller.App{ID: "123", Name: "test app", CreatedAt: &now}
 
 			app := &mockApp{}
-			app.On("App", aura.AppsQuery{ID: "123"}).Return(a, test.appErr)
+			app.On("App", controller.AppsQuery{ID: "123"}).Return(a, test.appErr)
 			if test.releases != nil || test.releasesErr != nil {
-				app.On("Releases", aura.ReleasesQuery{App: a}).Return(test.releases, test.releasesErr)
+				app.On("Releases", controller.ReleasesQuery{App: a}).Return(test.releases, test.releasesErr)
 			}
 
 			srvUrl := setupTestServer(t, app)
@@ -82,20 +82,20 @@ func TestServer_HandleGetRelease(t *testing.T) {
 	tests := []struct {
 		name           string
 		appErr         error
-		release        *aura.Release
+		release        *controller.Release
 		releaseErr     error
 		wantStatusCode int
 		wantResp       string
 	}{
 		{
 			name:           "handles request",
-			release:        &aura.Release{ID: "test", AppID: "123", Version: 2},
+			release:        &controller.Release{ID: "test", App: &controller.App{ID: "123"}, Version: 2},
 			wantStatusCode: http.StatusOK,
-			wantResp:       `{"id":"test","app":{"id":"","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}`,
+			wantResp:       `{"id":"test","app":{"id":"123","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}`,
 		},
 		{
 			name:           "handles app not found",
-			appErr:         aura.ErrNotFound,
+			appErr:         controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"app not found"}`,
 		},
@@ -107,7 +107,7 @@ func TestServer_HandleGetRelease(t *testing.T) {
 		},
 		{
 			name:           "handles release not found error",
-			releaseErr:     aura.ErrNotFound,
+			releaseErr:     controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"release not found"}`,
 		},
@@ -122,12 +122,12 @@ func TestServer_HandleGetRelease(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			a := &aura.App{ID: "123", Name: "test app", CreatedAt: &now}
+			a := &controller.App{ID: "123", Name: "test app", CreatedAt: &now}
 
 			app := &mockApp{}
-			app.On("App", aura.AppsQuery{ID: "123"}).Return(a, test.appErr)
+			app.On("App", controller.AppsQuery{ID: "123"}).Return(a, test.appErr)
 			if test.release != nil || test.releaseErr != nil {
-				app.On("Release", aura.ReleasesQuery{App: a, Version: 2}).Return(test.release, test.releaseErr)
+				app.On("Release", controller.ReleasesQuery{App: a, Version: 2}).Return(test.release, test.releaseErr)
 			}
 
 			srvUrl := setupTestServer(t, app)
@@ -152,7 +152,7 @@ func TestServer_HandleDeployApp(t *testing.T) {
 		name           string
 		req            string
 		appErr         error
-		release        *aura.Release
+		release        *controller.Release
 		releaseErr     error
 		wantImage      string
 		wantStatusCode int
@@ -161,10 +161,10 @@ func TestServer_HandleDeployApp(t *testing.T) {
 		{
 			name:           "handles request",
 			req:            `{"image":"foo/bar:latest"}`,
-			release:        &aura.Release{ID: "test", AppID: "123", Version: 2},
+			release:        &controller.Release{ID: "test", App: &controller.App{ID: "123"}, Version: 2},
 			wantImage:      "foo/bar:latest",
 			wantStatusCode: http.StatusOK,
-			wantResp:       `{"id":"test","app":{"id":"","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}`,
+			wantResp:       `{"id":"test","app":{"id":"123","name":"","createdAt":null},"image":"","version":2,"procfile":"","createdAt":null}`,
 		},
 		{
 			name:           "handles invalid json",
@@ -181,7 +181,7 @@ func TestServer_HandleDeployApp(t *testing.T) {
 		{
 			name:           "handles app not found",
 			req:            `{"image":"foo/bar:latest"}`,
-			appErr:         aura.ErrNotFound,
+			appErr:         controller.ErrNotFound,
 			wantStatusCode: http.StatusNotFound,
 			wantResp:       `{"error":"app not found"}`,
 		},
@@ -205,16 +205,16 @@ func TestServer_HandleDeployApp(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			a := &aura.App{ID: "123", Name: "test app", CreatedAt: &now}
+			a := &controller.App{ID: "123", Name: "test app", CreatedAt: &now}
 
 			app := &mockApp{}
-			app.On("App", aura.AppsQuery{ID: "123"}).Maybe().Return(a, test.appErr)
+			app.On("App", controller.AppsQuery{ID: "123"}).Maybe().Return(a, test.appErr)
 
 			if test.wantImage != "" {
 				img, err := image.Decode(test.wantImage)
 				require.NoError(t, err)
 
-				app.On("Deploy", aura.DeployConfig{App: a, Image: img}).Return(test.release, test.releaseErr)
+				app.On("Deploy", controller.DeployConfig{App: a, Image: img}).Return(test.release, test.releaseErr)
 			}
 
 			srvUrl := setupTestServer(t, app)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	lctx "github.com/hamba/logger/v2/ctx"
-	"github.com/nrwiersma/aura"
+	"github.com/nrwiersma/aura/pkg/controller"
 	"github.com/nrwiersma/aura/pkg/render"
 )
 
@@ -20,7 +20,7 @@ type appResp struct {
 	DeletedAt *time.Time `json:"deletedAt,omitempty"`
 }
 
-func toAppResp(app *aura.App) appResp {
+func toAppResp(app *controller.App) appResp {
 	return appResp{
 		ID:        app.ID,
 		Name:      app.Name,
@@ -31,7 +31,7 @@ func toAppResp(app *aura.App) appResp {
 
 func (s *Server) handleGetApps() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		apps, err := s.app.Apps(req.Context(), aura.AppsQuery{})
+		apps, err := s.app.Apps(req.Context(), controller.AppsQuery{})
 		if err != nil {
 			s.log.Error("Could not get apps", lctx.Error("error", err))
 			render.JSONInternalServerError(rw)
@@ -55,10 +55,10 @@ func (s *Server) handleGetApp() http.HandlerFunc {
 
 		log := s.log.With(lctx.Str("app_id", appID))
 
-		app, err := s.app.App(req.Context(), aura.AppsQuery{ID: appID})
+		app, err := s.app.App(req.Context(), controller.AppsQuery{ID: appID})
 		if err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("App not found")
 				render.JSONError(rw, http.StatusNotFound, "app not found")
 			default:
@@ -89,10 +89,10 @@ func (s *Server) handleCreateApp() http.HandlerFunc {
 			return
 		}
 
-		app, err := s.app.Create(req.Context(), aura.CreateConfig{Name: appReq.Name})
+		app, err := s.app.Create(req.Context(), controller.CreateConfig{Name: appReq.Name})
 		if err != nil {
 			switch {
-			case errors.As(err, &aura.ValidationError{}):
+			case errors.As(err, &controller.ValidationError{}):
 				s.log.Debug("Invalid app", lctx.Error("error", err))
 				render.JSONErrorf(rw, http.StatusBadRequest, "invalid app: %v", err)
 			default:
@@ -118,7 +118,7 @@ func (s *Server) handleDestroyApp() http.HandlerFunc {
 
 		if err := s.destroyApp(req.Context(), appID); err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("App not found")
 				render.JSONError(rw, http.StatusNotFound, "app not found")
 			default:
@@ -133,10 +133,10 @@ func (s *Server) handleDestroyApp() http.HandlerFunc {
 }
 
 func (s *Server) destroyApp(ctx context.Context, appID string) error {
-	app, err := s.app.App(ctx, aura.AppsQuery{ID: appID})
+	app, err := s.app.App(ctx, controller.AppsQuery{ID: appID})
 	if err != nil {
 		return err
 	}
 
-	return s.app.Destroy(ctx, aura.DestroyConfig{App: app})
+	return s.app.Destroy(ctx, controller.DestroyConfig{App: app})
 }

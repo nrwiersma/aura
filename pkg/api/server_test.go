@@ -12,8 +12,8 @@ import (
 
 	"github.com/hamba/logger/v2"
 	"github.com/hamba/statter/v2"
-	"github.com/nrwiersma/aura"
-	"github.com/nrwiersma/aura/api"
+	"github.com/nrwiersma/aura/pkg/api"
+	"github.com/nrwiersma/aura/pkg/controller"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -67,55 +67,55 @@ type mockApp struct {
 	mock.Mock
 }
 
-func (m *mockApp) App(_ context.Context, q aura.AppsQuery) (*aura.App, error) {
+func (m *mockApp) App(_ context.Context, q controller.AppsQuery) (*controller.App, error) {
 	args := m.Called(q)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*aura.App), args.Error(1)
+	return args.Get(0).(*controller.App), args.Error(1)
 }
 
-func (m *mockApp) Apps(_ context.Context, q aura.AppsQuery) ([]*aura.App, error) {
+func (m *mockApp) Apps(_ context.Context, q controller.AppsQuery) ([]*controller.App, error) {
 	args := m.Called(q)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*aura.App), args.Error(1)
+	return args.Get(0).([]*controller.App), args.Error(1)
 }
 
-func (m *mockApp) Create(_ context.Context, cfg aura.CreateConfig) (*aura.App, error) {
+func (m *mockApp) Create(_ context.Context, cfg controller.CreateConfig) (*controller.App, error) {
 	args := m.Called(cfg)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*aura.App), args.Error(1)
+	return args.Get(0).(*controller.App), args.Error(1)
 }
 
-func (m *mockApp) Destroy(_ context.Context, cfg aura.DestroyConfig) error {
+func (m *mockApp) Destroy(_ context.Context, cfg controller.DestroyConfig) error {
 	args := m.Called(cfg)
 	return args.Error(0)
 }
 
-func (m *mockApp) Release(_ context.Context, q aura.ReleasesQuery) (*aura.Release, error) {
+func (m *mockApp) Release(_ context.Context, q controller.ReleasesQuery) (*controller.Release, error) {
 	args := m.Called(q)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*aura.Release), args.Error(1)
+	return args.Get(0).(*controller.Release), args.Error(1)
 }
 
-func (m *mockApp) Releases(_ context.Context, q aura.ReleasesQuery) ([]*aura.Release, error) {
+func (m *mockApp) Releases(_ context.Context, q controller.ReleasesQuery) ([]*controller.Release, error) {
 	args := m.Called(q)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*aura.Release), args.Error(1)
+	return args.Get(0).([]*controller.Release), args.Error(1)
 }
 
-func (m *mockApp) Deploy(_ context.Context, cfg aura.DeployConfig) (*aura.Release, error) {
+func (m *mockApp) Deploy(_ context.Context, cfg controller.DeployConfig) (*controller.Release, error) {
 	args := m.Called(cfg)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*aura.Release), args.Error(1)
+	return args.Get(0).(*controller.Release), args.Error(1)
 }

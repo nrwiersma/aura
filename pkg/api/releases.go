@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	lctx "github.com/hamba/logger/v2/ctx"
-	"github.com/nrwiersma/aura"
+	"github.com/nrwiersma/aura/pkg/controller"
 	"github.com/nrwiersma/aura/pkg/image"
 	"github.com/nrwiersma/aura/pkg/render"
 )
@@ -24,7 +24,7 @@ type releaseResp struct {
 	CreatedAt *time.Time `json:"createdAt"`
 }
 
-func toReleaseResp(release *aura.Release) releaseResp {
+func toReleaseResp(release *controller.Release) releaseResp {
 	resp := releaseResp{
 		ID:        release.ID,
 		Version:   release.Version,
@@ -46,10 +46,10 @@ func (s *Server) handleGetReleases() http.HandlerFunc {
 
 		log := s.log.With(lctx.Str("app_id", appID))
 
-		app, err := s.app.App(req.Context(), aura.AppsQuery{ID: appID})
+		app, err := s.app.App(req.Context(), controller.AppsQuery{ID: appID})
 		if err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("App not found")
 				render.JSONError(rw, http.StatusNotFound, "app not found")
 			default:
@@ -59,7 +59,7 @@ func (s *Server) handleGetReleases() http.HandlerFunc {
 			return
 		}
 
-		releases, err := s.app.Releases(req.Context(), aura.ReleasesQuery{App: app})
+		releases, err := s.app.Releases(req.Context(), controller.ReleasesQuery{App: app})
 		if err != nil {
 			log.Error("Could not get releases", lctx.Error("error", err))
 			render.JSONInternalServerError(rw)
@@ -91,10 +91,10 @@ func (s *Server) handleGetRelease() http.HandlerFunc {
 
 		log := s.log.With(lctx.Str("app_id", appID), lctx.Int("version", ver))
 
-		app, err := s.app.App(req.Context(), aura.AppsQuery{ID: appID})
+		app, err := s.app.App(req.Context(), controller.AppsQuery{ID: appID})
 		if err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("App not found")
 				render.JSONError(rw, http.StatusNotFound, "app not found")
 			default:
@@ -104,10 +104,10 @@ func (s *Server) handleGetRelease() http.HandlerFunc {
 			return
 		}
 
-		release, err := s.app.Release(req.Context(), aura.ReleasesQuery{App: app, Version: ver})
+		release, err := s.app.Release(req.Context(), controller.ReleasesQuery{App: app, Version: ver})
 		if err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("Release not found")
 				render.JSONError(rw, http.StatusNotFound, "release not found")
 			default:
@@ -152,7 +152,7 @@ func (s *Server) handlerDeployApp() http.HandlerFunc {
 		resp, err := s.deployApp(req.Context(), appID, img)
 		if err != nil {
 			switch {
-			case errors.Is(err, aura.ErrNotFound):
+			case errors.Is(err, controller.ErrNotFound):
 				log.Debug("App not found")
 				render.JSONError(rw, http.StatusNotFound, "app not found")
 			default:
@@ -170,12 +170,12 @@ func (s *Server) handlerDeployApp() http.HandlerFunc {
 }
 
 func (s *Server) deployApp(ctx context.Context, appID string, img image.Image) (releaseResp, error) {
-	app, err := s.app.App(ctx, aura.AppsQuery{ID: appID})
+	app, err := s.app.App(ctx, controller.AppsQuery{ID: appID})
 	if err != nil {
 		return releaseResp{}, err
 	}
 
-	release, err := s.app.Deploy(ctx, aura.DeployConfig{
+	release, err := s.app.Deploy(ctx, controller.DeployConfig{
 		App:   app,
 		Image: img,
 	})

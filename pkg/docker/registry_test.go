@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	httptest "github.com/hamba/testutils/http"
-	"github.com/nrwiersma/aura/docker"
+	"github.com/nrwiersma/aura/pkg/docker"
 	"github.com/nrwiersma/aura/pkg/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -1,4 +1,4 @@
-package aura
+package store
 
 import (
 	"fmt"
@@ -7,31 +7,35 @@ import (
 	"time"
 
 	"github.com/hamba/logger/v2"
+	errorsx "github.com/hamba/pkg/v2/errors"
 	"github.com/nrwiersma/aura/pkg/migrate"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
 )
 
-// DB handles a database connection.
-type DB struct {
-	*gorm.DB
+// ErrNotFound is returned when a record is not found.
+const ErrNotFound = errorsx.Error("not found")
+
+// Database is a database store.
+type Database struct {
+	db *gorm.DB
 
 	schema   Schema
 	migrator *migrate.Migrator
 }
 
 // OpenDB returns a connected database.
-func OpenDB(dsn string, log *logger.Logger) (*DB, error) {
+func OpenDB(dsn string, log *logger.Logger) (*Database, error) {
 	if _, err := url.Parse(dsn); err != nil {
 		return nil, fmt.Errorf("could not parse db dsn: %w", err)
 	}
 
-	return NewDB(postgres.Open(dsn), log)
+	return NewDatabase(postgres.Open(dsn), log)
 }
 
-// NewDB return a DB from the given connection.
-func NewDB(dialect gorm.Dialector, log *logger.Logger) (*DB, error) {
+// NewDatabase return a DB from the given connection.
+func NewDatabase(dialect gorm.Dialector, log *logger.Logger) (*Database, error) {
 	db, err := gorm.Open(dialect, &gorm.Config{
 		Logger: glogger.New(logAdapter{log: log}, glogger.Config{
 			SlowThreshold:             200 * time.Millisecond,
@@ -49,14 +53,14 @@ func NewDB(dialect gorm.Dialector, log *logger.Logger) (*DB, error) {
 		return nil, fmt.Errorf("could not resolve to db: %w", err)
 	}
 
-	return &DB{
-		DB:       db,
+	return &Database{
+		db:       db,
 		migrator: migrate.New(sqlDB, new(sync.Mutex)),
 	}, nil
 }
 
 // Migrate migrates the database up.
-func (db *DB) Migrate() error {
+func (db *Database) Migrate() error {
 	err := db.migrator.Run(db.schema.migrations()...)
 	if err != nil {
 		return fmt.Errorf("could not migrate the database: %w", err)
@@ -65,8 +69,8 @@ func (db *DB) Migrate() error {
 }
 
 // IsHealthy determines if the database is healthy.
-func (db *DB) IsHealthy() error {
-	sqlDB, err := db.DB.DB()
+func (db *Database) IsHealthy() error {
+	sqlDB, err := db.db.DB()
 	if err != nil {
 		return err
 	}
